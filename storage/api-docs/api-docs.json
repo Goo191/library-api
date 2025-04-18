@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "University Library API",
-        "description": "توثيق الـ API لمكتبة الجامعة",
+        "title": "نظام المكتبة الجامعية",
+        "description": "توثيق API لنظام المكتبة الجامعية",
         "contact": {
             "email": "admin@university.com"
         },
@@ -63,6 +63,981 @@
                     },
                     "401": {
                         "description": "غير مصرح لك."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/me": {
+            "get": {
+                "tags": [
+                    "Students"
+                ],
+                "summary": "الحصول على بيانات الطالب الحالي",
+                "description": "إرجاع بيانات الطالب المسجل دخوله حالياً",
+                "operationId": "8e0149b7f62d4e6ff6573491d62b4560",
+                "responses": {
+                    "200": {
+                        "description": "بيانات الطالب",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "يوسف طارق احمد"
+                                        },
+                                        "student_id": {
+                                            "type": "integer",
+                                            "example": 15901
+                                        },
+                                        "image": {
+                                            "type": "string",
+                                            "example": "http://localhost/storage/students/image.jpg"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح لك"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "عرض قائمة الكتب",
+                "description": "عرض قائمة الكتب مع إمكانية البحث والتصفية",
+                "operationId": "a9d13283dfab262e97af3c914d51b7a8",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "اسم الفئة للتصفية",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "كلمة البحث في عنوان الكتاب",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "قائمة الكتب",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "عنوان الكتاب"
+                                                    },
+                                                    "quantity": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "category": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "authors": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "إضافة كتاب جديد",
+                "description": "إضافة كتاب جديد إلى المكتبة",
+                "operationId": "47047e95a700b3271b697e57d0965191",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "quantity",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "عنوان الكتاب"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "publish_year": {
+                                        "type": "integer",
+                                        "example": 2024
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "example": "path/to/file.pdf",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "تم إضافة الكتاب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إضافة الكتاب بنجاح"
+                                        },
+                                        "book": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "title": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "publish_year": {
+                                                    "type": "integer"
+                                                },
+                                                "category_id": {
+                                                    "type": "integer"
+                                                },
+                                                "qr_code": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "file": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books/{id}": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "عرض تفاصيل كتاب",
+                "description": "عرض تفاصيل كتاب معين",
+                "operationId": "2fdd668eb661591758aff4c56ca9b66a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الكتاب",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تفاصيل الكتاب",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "title": {
+                                            "type": "string"
+                                        },
+                                        "quantity": {
+                                            "type": "integer"
+                                        },
+                                        "category": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "authors": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "تحديث كتاب",
+                "description": "تحديث معلومات كتاب موجود",
+                "operationId": "f5ca658c501a803d68655af0365e3802",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الكتاب",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "quantity",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "عنوان الكتاب"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "publish_year": {
+                                        "type": "integer",
+                                        "example": 2024
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "example": "path/to/file.pdf",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تحديث الكتاب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث الكتاب بنجاح"
+                                        },
+                                        "book": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "title": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "publish_year": {
+                                                    "type": "integer"
+                                                },
+                                                "category_id": {
+                                                    "type": "integer"
+                                                },
+                                                "qr_code": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "file": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود"
+                    },
+                    "422": {
+                        "description": "بيانات غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "حذف كتاب",
+                "description": "حذف كتاب من المكتبة",
+                "operationId": "1a9c26667c32b8ed5e5770d7a1cc9d5c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الكتاب",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "تم حذف الكتاب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم حذف الكتاب بنجاح"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books/borrow": {
+            "post": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "استعارة كتاب",
+                "description": "استعارة كتاب عن طريق مسح رمز QR",
+                "operationId": "1bee54b41603609b59647b0b4017e092",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "qr_code"
+                                ],
+                                "properties": {
+                                    "qr_code": {
+                                        "type": "string",
+                                        "example": "book_123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم استعارة الكتاب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم استعارة الكتاب بنجاح"
+                                        },
+                                        "borrow": {
+                                            "properties": {
+                                                "book_title": {
+                                                    "type": "string"
+                                                },
+                                                "borrow_date": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "خطأ في البيانات أو الكتاب غير متوفر"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books/return": {
+            "post": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "إرجاع كتاب",
+                "description": "إرجاع كتاب عن طريق مسح رمز QR",
+                "operationId": "e6f4df9aba674d917b12d3a09067eae6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "qr_code"
+                                ],
+                                "properties": {
+                                    "qr_code": {
+                                        "type": "string",
+                                        "example": "book_123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم إرجاع الكتاب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إرجاع الكتاب بنجاح"
+                                        },
+                                        "book": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "title": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "لا يوجد استعارة نشطة لهذا الكتاب"
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books/all": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "عرض جميع الكتب",
+                "description": "عرض قائمة بجميع الكتب في المكتبة",
+                "operationId": "6a18b4d9ad99e57889939345478eee27",
+                "responses": {
+                    "200": {
+                        "description": "قائمة جميع الكتب",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "books": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "qr_code": {
+                                                        "type": "string"
+                                                    },
+                                                    "quantity": {
+                                                        "type": "integer"
+                                                    },
+                                                    "category": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "authors": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books/history": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "عرض سجل استعارة الكتب",
+                "description": "عرض سجل استعارة الكتب للطالب الحالي مع عدد الكتب المستعارة",
+                "operationId": "994a5b0adc7a7d3b54d6905918df3369",
+                "responses": {
+                    "200": {
+                        "description": "سجل الاستعارة",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_borrowed": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "history": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "book_title": {
+                                                        "type": "string"
+                                                    },
+                                                    "borrow_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "return_date": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "nullable": true
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "borrowed"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/qr-login": {
+            "post": {
+                "tags": [
+                    "Library Access"
+                ],
+                "summary": "تسجيل دخول الطالب للمكتبة عن طريق QR",
+                "operationId": "afcbef53ad72aa6b9babd112ddbd1830",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "qr_content"
+                                ],
+                                "properties": {
+                                    "qr_content": {
+                                        "type": "string",
+                                        "example": "library_qr_code"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تسجيل الدخول بنجاح"
+                    },
+                    "400": {
+                        "description": "رمز QR غير صالح"
+                    },
+                    "401": {
+                        "description": "غير مصرح له"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/qr-logout": {
+            "post": {
+                "tags": [
+                    "Library Access"
+                ],
+                "summary": "تسجيل خروج الطالب من المكتبة",
+                "operationId": "029b8d8aeae56ed6c045d0b7092cdfb4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "qr_content"
+                                ],
+                                "properties": {
+                                    "qr_content": {
+                                        "type": "string",
+                                        "example": "library_qr_code"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تم تسجيل الخروج بنجاح"
+                    },
+                    "400": {
+                        "description": "رمز QR غير صالح أو لا يوجد تسجيل دخول نشط"
+                    },
+                    "401": {
+                        "description": "غير مصرح له"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "عرض قائمة التصنيفات",
+                "description": "عرض قائمة بجميع التصنيفات المتاحة",
+                "operationId": "1ba94c3ddf4dbb87208e46c12a5d1a45",
+                "responses": {
+                    "200": {
+                        "description": "قائمة التصنيفات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "الإدارة"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/{name}/books": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "عرض الكتب حسب التصنيف",
+                "description": "عرض قائمة الكتب في التصنيف المحدد",
+                "operationId": "718431eacec5659ee2067eebc435c9b7",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "description": "اسم التصنيف (مثال: الإدارة)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "قائمة الكتب في التصنيف المحدد",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Book"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح"
+                    },
+                    "404": {
+                        "description": "التصنيف غير موجود"
                     }
                 },
                 "security": [
@@ -184,22 +1159,79 @@
         }
     },
     "components": {
+        "schemas": {
+            "Book": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "عنوان الكتاب"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "category": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "authors": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
-                "bearerFormat": "JWT",
-                "scheme": "bearer"
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
             }
         }
     },
     "tags": [
         {
+            "name": "Authentication",
+            "description": "نقاط النهاية الخاصة بتسجيل الدخول والخروج"
+        },
+        {
+            "name": "Library Access",
+            "description": "نقاط النهاية الخاصة بالدخول والخروج من المكتبة"
+        },
+        {
             "name": "Students",
             "description": "إدارة بيانات الطلاب"
         },
         {
-            "name": "Authentication",
-            "description": "Authentication"
+            "name": "Books",
+            "description": "Books"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
         }
     ]
 }

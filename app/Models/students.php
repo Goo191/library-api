@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class students extends Model
+class students extends Authenticatable
 {
     use HasFactory;
     use HasApiTokens;
-    protected $fillable = ['name', 'student_id','image'];
+    protected $fillable = ['name', 'student_id', 'image'];
     public function getImageUrlAttribute()
     {
         return $this->image ? asset('storage/' . $this->image) : null;

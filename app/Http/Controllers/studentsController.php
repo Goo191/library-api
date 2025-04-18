@@ -85,14 +85,21 @@ class studentsController extends Controller
      *     )
      * )
      */
-    public function show(students $student)
+    public function show($id)
     {
+        $student = students::find($id);
+        
+        if (!$student) {
+            return response()->json([
+                'message' => 'الطالب غير موجود'
+            ], 404);
+        }
+
         return response()->json([
             'id' => $student->id,
             'name' => $student->name,
             'student_id' => $student->student_id,
-            'image' => $student->image ? url('storage/' . $student->image) : null
-        ], 200, [], JSON_UNESCAPED_UNICODE);
+            'image' => $student->image ? asset('storage/' . $student->image) : null
+        ]);
     }
-    
 }

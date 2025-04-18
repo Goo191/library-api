@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class books extends Model
 {
     use HasFactory;
+    public $timestamps = false;
     protected $fillable = ['title', 'quantity', 'publish_year', 'category_id', 'qr_code','file'];
 
     public function category()
@@ -17,7 +18,7 @@ class books extends Model
 
     public function authors()
     {
-        return $this->belongsToMany(authors::class, 'author_book');
+        return $this->belongsToMany(authors::class, 'author_book', 'book_id', 'author_id');
     }
 
     public function students()

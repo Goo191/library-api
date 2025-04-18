@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\students;
-
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -26,50 +28,76 @@ class AuthController extends Controller
      * )
      */
     public function login(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string',
-        'student_id' => 'required|numeric'
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'student_id' => 'required|numeric'
+        ]);
 
-    $student = students::where('name', $request->name)
-                       ->where('student_id', $request->student_id)
-                       ->first();
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-    if (!$student) {
+        $student = students::where('name', $request->name)
+            ->where('student_id', $request->student_id)
+            ->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'بيانات الطالب غير صحيحة'], 401);
+        }
+
+        $token = $student->createToken('auth_token')->plainTextToken;
+
         return response()->json([
-            'message' => 'بيانات الطالب غير صحيحة.'
-        ], 401);
+            'token' => $token,
+            'student' => $student
+        ]);
     }
 
-    // إنشاء توكن جديد للطالب
-    $token = $student->createToken('StudentAuthToken')->plainTextToken;
-
-    return response()->json([
-        'message' => 'تم تسجيل الدخول بنجاح!',
-        'student' => $student,
-        'token' => $token
-    ]);
-}
-
-
-  /**
- * @OA\Post(
- *     path="/api/logout",
- *     summary="تسجيل خروج الطالب",
- *     tags={"Authentication"},
- *     security={{"bearerAuth":{}}},
- *     @OA\Response(response=200, description="تم تسجيل الخروج بنجاح."),
- *     @OA\Response(response=401, description="غير مصرح لك.")
- * )
- */
+    /**
+     * @OA\Post(
+     *     path="/api/logout",
+     *     summary="تسجيل خروج الطالب",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response=200, description="تم تسجيل الخروج بنجاح."),
+     *     @OA\Response(response=401, description="غير مصرح لك.")
+     * )
+     */
     public function logout(Request $request)
-{
-    $request->user()->currentAccessToken()->delete();
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'تم تسجيل الخروج بنجاح']);
+    }
 
-    return response()->json([
-        'message' => 'تم تسجيل الخروج بنجاح!'
-    ]);
-}
-
+    /**
+     * @OA\Get(
+     *     path="/api/me",
+     *     summary="الحصول على بيانات الطالب الحالي",
+     *     description="إرجاع بيانات الطالب المسجل دخوله حالياً",
+     *     tags={"Students"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="بيانات الطالب",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="يوسف طارق احمد"),
+     *             @OA\Property(property="student_id", type="integer", example=15901),
+     *             @OA\Property(property="image", type="string", example="http://localhost/storage/students/image.jpg")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="غير مصرح لك")
+     * )
+     */
+    public function getCurrentStudent(Request $request)
+    {
+        $student = $request->user();
+        return response()->json([
+            'id' => $student->id,
+            'name' => $student->name,
+            'student_id' => $student->student_id,
+            'image' => $student->image ? asset('storage/' . $student->image) : null
+        ]);
+    }
 }
