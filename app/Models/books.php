@@ -28,12 +28,12 @@ class books extends Model
 
     public function students()
     {
-        return $this->belongsToMany(Student::class, 'book_student', 'book_id', 'student_id');
+        return $this->belongsToMany(students::class, 'book_student', 'book_id', 'student_id');
     }
 
     public function borrows()
     {
-        return $this->hasMany(Borrow::class);
+        return $this->hasMany(borrows::class);
     }
 
     public function getCategoryImageAttribute()

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\students;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -96,7 +98,7 @@ class studentsController extends Controller
         $fullPath = storage_path('app/public/' . $cleanPath);
         $publicPath = public_path('storage/' . $cleanPath);
         
-        \Log::info('Student Image Debug:', [
+        Log::info('Student Image Debug:', [
             'image_path' => $imagePath,
             'clean_path' => $cleanPath,
             'full_path' => $fullPath,

@@ -20,6 +20,13 @@ class categories extends Model
 
     public function getImageUrlAttribute()
     {
-        return $this->image ? asset('storage/' . $this->image) : null;
+        if (!$this->image) {
+            return null;
+        }
+        // تنظيف المسار من storage/ في البداية إذا وجد
+        $cleanPath = str_replace('storage/', '', $this->image);
+        // إزالة المسافات الزائدة
+        $cleanPath = trim($cleanPath);
+        return asset('storage/' . $cleanPath);
     }
 }

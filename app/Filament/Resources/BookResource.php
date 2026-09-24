@@ -35,6 +35,10 @@ class BookResource extends Resource
                     ->label('Name')
                     ->required()
                     ->maxLength(255),
+               // Forms\Components\Textarea::make('description')
+                 //   ->label('Description')
+                  //  ->maxLength(1000)
+                   // ->columnSpanFull(),
                 Forms\Components\Select::make('authors')
                     ->label('Author')
                     ->relationship('authors', 'name')
@@ -73,6 +77,10 @@ class BookResource extends Resource
                     ->label('Name')
                     ->searchable()
                     ->sortable(),
+            //    Tables\Columns\TextColumn::make('description')
+              //      ->label('Description')
+                //    ->limit(50)
+                  //  ->searchable(),
                 Tables\Columns\TextColumn::make('authors.name')
                     ->label('Author')
                     ->searchable()

@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+
 
 /**
  * @OA\Tag(
@@ -97,7 +100,8 @@ class BookController extends Controller
         if ($request->has('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
         }
-        
+
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $books */
         $books = $query->paginate(10);
         
         // معالجة مسارات الصور و QR code لكل كتاب
@@ -223,6 +227,7 @@ class BookController extends Controller
     public function show($title)
     {
         return $this->showByTitle($title);
+
     }
 
     /**
@@ -393,60 +398,25 @@ class BookController extends Controller
             'qr_code' => 'required|string',
         ]);
 
-        \Log::info('Borrow request received', [
-            'qr_code' => $request->qr_code,
-            'user_id' => Auth::id()
-        ]);
-
-        // التحقق من تواجد الطالب في المكتبة
-        $lastLog = qr_logs::where('student_id', Auth::id())
-            ->whereNull('check_out')
-            ->latest('check_in')
-            ->first();
-
-        if (!$lastLog) {
-            \Log::warning('Student not in library', ['user_id' => Auth::id()]);
-            return response()->json([
-                'message' => 'يجب تسجيل الدخول للمكتبة أولاً'
-            ], 400);
-        }
-
-        // التحقق من وجود استعارة نشطة للطالب
-        $activeBorrow = borrows::where('student_id', Auth::id())
-            ->whereNull('return_date')
-            ->first();
-
-        if ($activeBorrow) {
-            \Log::warning('Student has active borrow', [
-                'user_id' => Auth::id(),
-                'book_id' => $activeBorrow->book_id
-            ]);
-            return response()->json([
-                'message' => 'يجب إرجاع الكتاب المستعار حالياً قبل استعارة كتاب جديد',
-                'current_book' => [
-                    'title' => $activeBorrow->book->title,
-                    'borrow_date' => $activeBorrow->borrow_date
-                ]
-            ], 400);
-        }
-
-        // استخراج رقم الكتاب من اسم ملف QR code
         $qrCode = $request->qr_code;
-        $fileName = basename($qrCode); // استخراج اسم الملف فقط
-        
-        // استخراج رقم الكتاب من اسم الملف (يدعم الصيغ المختلفة مثل book_1.png, book_1.jpg, book_1)
+        $currentBookTitle = $request->current_book_title;
+
+      
+
+        // استخراج معرف الكتاب من رمز QR
+        $fileName = basename($qrCode);
         if (preg_match('/book_(\d+)(?:\.(?:png|jpg|jpeg))?$/', $fileName, $matches)) {
             $bookId = $matches[1];
             $book = books::find($bookId);
         } else {
-            \Log::warning('Invalid QR code format', ['qr_code' => $qrCode]);
+            Log::warning('Invalid QR code format', ['qr_code' => $qrCode]);
             return response()->json([
                 'message' => 'رمز QR غير صالح'
             ], 400);
         }
         
         if (!$book) {
-            \Log::warning('Book not found', [
+            Log::warning('Book not found', [
                 'book_id' => $bookId,
                 'qr_code' => $qrCode
             ]);
@@ -454,6 +424,8 @@ class BookController extends Controller
                 'message' => 'لم يتم العثور على الكتاب'
             ], 404);
         }
+
+      
 
         // التحقق من أن الكتاب متاح للاستعارة
         if ($book->quantity <= 0) {
@@ -519,41 +491,24 @@ class BookController extends Controller
             'qr_code' => 'required|string',
         ]);
 
-        \Log::info('Return request received', [
-            'qr_code' => $request->qr_code,
-            'user_id' => Auth::id()
-        ]);
-
-        // التحقق من تواجد الطالب في المكتبة
-        $lastLog = qr_logs::where('student_id', Auth::id())
-            ->whereNull('check_out')
-            ->latest('check_in')
-            ->first();
-
-        if (!$lastLog) {
-            \Log::warning('Student not in library', ['user_id' => Auth::id()]);
-            return response()->json([
-                'message' => 'يجب تسجيل الدخول للمكتبة أولاً'
-            ], 400);
-        }
-
-        // استخراج رقم الكتاب من اسم ملف QR code
         $qrCode = $request->qr_code;
-        $fileName = basename($qrCode); // استخراج اسم الملف فقط
-        
-        // استخراج رقم الكتاب من اسم الملف (يدعم الصيغ المختلفة مثل book_1.png, book_1.jpg, book_1)
+        $currentBookTitle = $request->current_book_title;
+
+       
+        // استخراج معرف الكتاب من رمز QR
+        $fileName = basename($qrCode);
         if (preg_match('/book_(\d+)(?:\.(?:png|jpg|jpeg))?$/', $fileName, $matches)) {
             $bookId = $matches[1];
             $book = books::find($bookId);
         } else {
-            \Log::warning('Invalid QR code format', ['qr_code' => $qrCode]);
+            Log::warning('Invalid QR code format', ['qr_code' => $qrCode]);
             return response()->json([
                 'message' => 'رمز QR غير صالح'
             ], 400);
         }
         
         if (!$book) {
-            \Log::warning('Book not found', [
+            Log::warning('Book not found', [
                 'book_id' => $bookId,
                 'qr_code' => $qrCode
             ]);
@@ -562,14 +517,15 @@ class BookController extends Controller
             ], 404);
         }
 
-        // البحث عن عملية الاستعارة النشطة
+        
+
         $borrow = borrows::where('book_id', $book->id)
             ->where('student_id', Auth::id())
             ->whereNull('return_date')
             ->first();
 
         if (!$borrow) {
-            \Log::warning('No active borrow found', [
+            Log::warning('No active borrow found', [
                 'book_id' => $book->id,
                 'user_id' => Auth::id()
             ]);
@@ -982,7 +938,7 @@ class BookController extends Controller
         try {
             $student_id = Auth::id();
             
-            \Log::info('Attempting to view PDF', [
+            Log::info('Attempting to view PDF', [
                 'book_id' => $id,
                 'student_id' => $student_id
             ]);
@@ -997,7 +953,7 @@ class BookController extends Controller
             // البحث عن الكتاب باستخدام query builder للتأكد
             $book = DB::table('books')->where('id', $id)->first();
             
-            \Log::info('Book search result', [
+            Log::info('Book search result', [
                 'book' => $book ? 'found' : 'not found',
                 'book_id' => $id
             ]);
@@ -1018,7 +974,7 @@ class BookController extends Controller
                 ->where('student_id', $student_id)
                 ->exists();
 
-            \Log::info('Student access check', [
+            Log::info('Student access check', [
                 'has_access' => $hasAccess,
                 'book_id' => $id,
                 'student_id' => $student_id
@@ -1069,7 +1025,7 @@ class BookController extends Controller
                 }
             }
             
-            \Log::info('File path check', [
+            Log::info('File path check', [
                 'file_path' => $file_path,
                 'possible_paths' => $possible_paths,
                 'exists' => $file_exists,
@@ -1101,7 +1057,7 @@ class BookController extends Controller
             );
 
         } catch (\Exception $e) {
-            \Log::error('Error in viewPdf', [
+            Log::error('Error in viewPdf', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1128,22 +1084,30 @@ class BookController extends Controller
         }
 
         // معالجة مسار صورة الفئة
-        if ($book->category && $book->category->image) {
-            $cleanPath = trim($book->category->image);
-            $cleanPath = str_replace('\\', '/', $cleanPath);
-            $cleanPath = preg_replace('/^storage\//', '', $cleanPath);
-            $cleanPath = preg_replace('/\s+/', '', $cleanPath);
+        if($book->category && $book->category->image) {
+            // تنظيف المسار من storage/ في البداية إذا وجد
+            $cleanPath = str_replace('storage/', '', $book->category->image);
+            // إزالة المسافات الزائدة وإصلاح المسار
+            $cleanPath = trim($cleanPath);
+            $cleanPath = str_replace(' categories/', 'categories/', $cleanPath);
+            $cleanPath = str_replace(' categories', 'categories', $cleanPath);
+            $cleanPath = str_replace('storage/', '', $cleanPath); // إزالة storage/ مرة أخرى للتأكد
+            // إنشاء المسار الصحيح مع asset
             $book->category_image = asset('storage/' . $cleanPath);
         }
 
+
         // تنظيف مسار رمز QR
+       
         if ($book->qr_code) {
-            $cleanPath = trim($book->qr_code);
-            $cleanPath = str_replace('\\', '/', $cleanPath);
-            $cleanPath = preg_replace('/^storage\//', '', $cleanPath);
-            $cleanPath = preg_replace('/\s+/', '', $cleanPath);
-            $filename = basename($cleanPath);
-            $book->qr_code = asset('storage/qrcodes/' . $filename);
+            // تنظيف المسار من storage/ في البداية إذا وجد
+            $cleanPath = str_replace('storage/', '', $book->qr_code);
+            // إزالة المسافات الزائدة
+            $cleanPath = trim($cleanPath);
+            // استخراج اسم الملف فقط
+            $fileName = basename($cleanPath);
+            // إنشاء المسار الصحيح مع asset
+            $book->qr_code = asset('storage/qrcodes/' . $fileName);
         }
 
         return response()->json($book);
@@ -1199,4 +1163,153 @@ class BookController extends Controller
             'books' => $books
         ]);
     }
+
+
+   /**
+ * @OA\Get(
+ *     path="/api/books/current/{title}",
+ *     summary="التحقق من أن الكتاب الحالي هو المطلوب",
+ *     description="تستخدم هذه النقطة للتحقق من أن عنوان الكتاب الحالي هو نفسه قبل عملية الاستعارة أو الإرجاع.",
+ *     tags={"Books"},
+ *     security={{"bearerAuth":{}}}, 
+ *     @OA\Parameter(
+ *         name="title",
+ *         in="path",
+ *         description="عنوان الكتاب للتحقق منه",
+ *         required=true,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="الكتاب متاح",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="الكتاب متاح"),
+ *             @OA\Property(property="book", type="object",
+ *                 @OA\Property(property="id", type="integer"),
+ *                 @OA\Property(property="title", type="string"),
+ *                 @OA\Property(property="description", type="string", nullable=true)
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="الكتاب غير موجود",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="الكتاب غير موجود")
+ *         )
+ *     )
+ * )
+ */
+    public function verifyCurrentBook($title)
+    {
+        $book = books::where('title', $title)->first();
+
+        if (!$book) {
+            return response()->json([
+                'message' => 'الكتاب غير موجود'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'الكتاب متاح',
+            'book' => [
+                'id' => $book->id,
+                'title' => $book->title
+            ]
+        ]);
+    }
+    /**
+ * @OA\Post(
+ *     path="/api/books/verify-scan",
+ *     summary="التحقق من تطابق QR Code مع الكتاب الحالي",
+ *     description="تستخدم هذه النقطة للتحقق مما إذا كان QR Code الممسوح يخص الكتاب الحالي المعروض قبل تنفيذ أي عملية.",
+ *     tags={"Books"},
+ *     security={{"bearerAuth":{}}}, 
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"current_book_id", "scanned_qr_code"},
+ *             @OA\Property(
+ *                 property="current_book_id",
+ *                 type="integer",
+ *                 example=2001,
+ *                 description="معرف الكتاب الحالي"
+ *             ),
+ *             @OA\Property(
+ *                 property="scanned_qr_code",
+ *                 type="string",
+ *                 example="book_2001",
+ *                 description="رمز QR الذي تم مسحه"
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="تطابق QR Code بنجاح",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="QR Code matches the book."),
+ *             @OA\Property(
+ *                 property="book",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=2001),
+ *                 @OA\Property(property="title", type="string", example="تجارب ومشاريع عملية على استخدام الدوائر الرقمية")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="فشل التحقق - الكود لا يطابق",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="QR Code does not match the book.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="الكتاب غير موجود",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Book not found.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="غير مصرح - تحتاج إلى تسجيل الدخول"
+ *     )
+ * )
+ */
+
+ public function verifyScan(Request $request)
+ {
+     $request->validate([
+         'current_book_id' => 'required|integer',
+         'scanned_qr_code' => 'required|string',
+     ]);
+ 
+     $book = books::find($request->current_book_id);
+ 
+     if (!$book) {
+         return response()->json([
+             'success' => false,
+             'message' => 'الكتاب غير موجود.'
+         ], 404);
+     }
+ 
+     // تجهيز الـ qr_code قبل المقارنة
+     $expectedQrCode = pathinfo($book->qr_code, PATHINFO_FILENAME); // هيشيل المسار والامتداد ويخلي بس اسم الملف
+ 
+     if ($expectedQrCode === $request->scanned_qr_code) {
+         return response()->json([
+             'success' => true,
+             'message' => 'QR Code مطابق للكتاب.'
+         ]);
+     } else {
+         return response()->json([
+             'success' => false,
+             'message' => 'QR Code لا يطابق هذا الكتاب.'
+         ], 400);
+     }
+ }
+ 
 } 

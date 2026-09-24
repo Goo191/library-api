@@ -613,6 +613,32 @@ use App\Http\Controllers\SearchController;
  * )
  */
 
+/**
+ * @OA\Get(
+ *     path="/api/books/verify",
+ *     summary="التحقق من وجود كتاب بنفس العنوان",
+ *     description="التحقق من وجود كتاب بنفس العنوان قبل الإضافة",
+ *     tags={"Books"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="title",
+ *         in="query",
+ *         description="عنوان الكتاب للتحقق منه",
+ *         required=true,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="نتيجة التحقق",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="exists", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="يوجد كتاب بنفس العنوان")
+ *         )
+ *     ),
+ *     @OA\Response(response=401, description="غير مصرح")
+ * )
+ */
+
 // API Documentation
 Route::get('/', function () {
     return redirect('/api/documentation');
@@ -667,6 +693,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Library routes
     Route::post('/qr-login', [QrController::class, 'checkIn']);
     Route::post('/qr-logout', [QrController::class, 'checkOut']);
+    Route::get('/qr-status', [QrController::class, 'checkStatus']);
+
 
     // Student routes
     Route::get('/students/{id}', [studentsController::class, 'show']);
@@ -680,13 +708,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/books/study-materials', [BookController::class, 'getStudyMaterials']);
     Route::get('/books/{id}/view-pdf', [BookController::class, 'viewPdf']);
     Route::get('/books/title/{title}', [BookController::class, 'showByTitle'])->where('title', '.*');
-    Route::get('/books/{title}', [BookController::class, 'showByTitle'])->where('title', '.*');
+    Route::get('/books/current/{title}', [BookController::class, 'verifyCurrentBook']);
     Route::get('/books', [BookController::class, 'index']);
     Route::post('/books', [BookController::class, 'store']);
     Route::put('/books/{id}', [BookController::class, 'update']);
     Route::delete('/books/{id}', [BookController::class, 'destroy']);
     Route::post('/books/borrow', [BookController::class, 'borrowBook']);
     Route::post('/books/return', [BookController::class, 'returnBook']);
+    Route::post('/books/verify-scan', [BookController::class, 'verifyScan']);
+    Route::get('/books/{title}', [BookController::class, 'show']);
 
     // Categories routes
     Route::get('/categories', [SearchController::class, 'listCategories']);

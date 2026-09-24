@@ -1128,6 +1128,200 @@
                 ]
             }
         },
+        "/api/books/current/{title}": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "التحقق من أن الكتاب الحالي هو المطلوب",
+                "description": "تستخدم هذه النقطة للتحقق من أن عنوان الكتاب الحالي هو نفسه قبل عملية الاستعارة أو الإرجاع.",
+                "operationId": "e8e66c9c272b94b87761b37a2ed68b79",
+                "parameters": [
+                    {
+                        "name": "title",
+                        "in": "path",
+                        "description": "عنوان الكتاب للتحقق منه",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "الكتاب متاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "الكتاب متاح"
+                                        },
+                                        "book": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "title": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "الكتاب غير موجود"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/books/verify-scan": {
+            "post": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "التحقق من تطابق QR Code مع الكتاب الحالي",
+                "description": "تستخدم هذه النقطة للتحقق مما إذا كان QR Code الممسوح يخص الكتاب الحالي المعروض قبل تنفيذ أي عملية.",
+                "operationId": "c861dbabe4f3e08303f90b22d0101167",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_book_id",
+                                    "scanned_qr_code"
+                                ],
+                                "properties": {
+                                    "current_book_id": {
+                                        "description": "معرف الكتاب الحالي",
+                                        "type": "integer",
+                                        "example": 2001
+                                    },
+                                    "scanned_qr_code": {
+                                        "description": "رمز QR الذي تم مسحه",
+                                        "type": "string",
+                                        "example": "book_2001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "تطابق QR Code بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "QR Code matches the book."
+                                        },
+                                        "book": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "تجارب ومشاريع عملية على استخدام الدوائر الرقمية"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "فشل التحقق - الكود لا يطابق",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "QR Code does not match the book."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "الكتاب غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Book not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "غير مصرح - تحتاج إلى تسجيل الدخول"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/qr-login": {
             "post": {
                 "tags": [
@@ -1204,6 +1398,28 @@
                     },
                     "400": {
                         "description": "رمز QR غير صالح أو لا يوجد تسجيل دخول نشط"
+                    },
+                    "401": {
+                        "description": "غير مصرح له"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/qr-status": {
+            "get": {
+                "tags": [
+                    "Library Access"
+                ],
+                "summary": "جلب حالة تسجيل دخول الطالب في المكتبة",
+                "operationId": "98558cb3e5310e5e8de00b9ecd34320e",
+                "responses": {
+                    "200": {
+                        "description": "الحالة تم إرجاعها بنجاح"
                     },
                     "401": {
                         "description": "غير مصرح له"
